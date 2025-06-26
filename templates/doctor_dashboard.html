@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Doctor Dashboard - HealthCare</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <style>
+    body {
+      background-color: #f2f4f8;
+    }
+    .stat-card {
+      background-color: #fff;
+      border: 1px solid #dee2e6;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      text-align: center;
+    }
+    .stat-card h3 {
+      margin-bottom: 5px;
+    }
+    .welcome-box {
+      background: linear-gradient(to right, #0d6efd, #0b5ed7);
+      color: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    }
+    .badge-pill {
+      border-radius: 50rem;
+      padding: 0.5em 1em;
+    }
+    .tab-pane {
+      padding-top: 10px;
+    }
+
+    /* Responsive styling */
+    @media (max-width: 767.98px) {
+      /* Add margin-bottom to stat cards */
+      .stat-card {
+        margin-bottom: 15px;
+      }
+
+      /* Stack search form fields */
+      form.d-flex.mb-3 {
+        flex-direction: column !important;
+        gap: 10px;
+      }
+      form.d-flex.mb-3 input.form-control,
+      form.d-flex.mb-3 button.btn {
+        width: 100% !important;
+        margin: 0 !important;
+      }
+
+      /* Make tables horizontally scrollable */
+      .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+    }
+
+    @media (min-width: 768px) and (max-width: 991.98px) {
+      /* Slight spacing for tablets */
+      .stat-card {
+        margin-bottom: 15px;
+      }
+      .welcome-box {
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
+  <a class="navbar-brand fw-bold" href="#"><span class="text-primary">Health</span>Care</a>
+  <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+          aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+    <ul class="navbar-nav">
+      <li class="nav-item"><a class="nav-link" href="#">Dashboard</a></li>
+      <li class="nav-item">
+        {% if session.get('role') == 'doctor' %}
+          <a class="nav-link" href="{{ url_for('doctor_profile') }}">Profile</a>
+        {% elif session.get('role') == 'patient' %}
+          <a class="nav-link" href="{{ url_for('patient_profile') }}">Profile</a>
+        {% endif %}
+      </li>
+      <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Main Content -->
+<div class="container mt-4">
+
+  <!-- Welcome -->
+  <div class="welcome-box mb-4">
+    <h4 class="fw-bold mb-1">Welcome, Dr. {{ user.name }}</h4>
+    <p class="mb-0">Manage your appointments and patient consultations from your dashboard.</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="stat-card">
+        <h3 class="text-primary">{{ pending }}</h3>
+        <p class="mb-0">Pending Appointments</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="stat-card">
+        <h3 class="text-success">{{ completed }}</h3>
+        <p class="mb-0">Completed Appointments</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="stat-card">
+        <h3 class="text-info">{{ total }}</h3>
+        <p class="mb-0">Total Appointments</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+          <a class="nav-link active" data-bs-toggle="tab" href="#pending">Pending Appointments</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-bs-toggle="tab" href="#completed">Completed Appointments</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-bs-toggle="tab" href="#all">All Appointments</a>
+        </li>
+      </ul>
+
+      <div class="tab-content">
+        <!-- Pending Tab -->
+        <div class="tab-pane fade show active" id="pending">
+          <form class="d-flex mb-3" method="get" action="{{ url_for('doctor_dashboard') }}">
+  <input type="text" name="search" class="form-control me-2" placeholder="Search patient name..." value="{{ request.args.get('search', '') }}">
+  <button class="btn btn-primary">Search</button>
+</form>
+
+
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+              <thead class="table-light">
+                <tr>
+                  <th>Patient Name</th>
+                  <th>Date</th>
+                  <th>Symptoms</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for appt in appointments if appt['status'] == 'Pending' %}
+                <tr>
+                  <td>{{ users[appt['patient_id']]['name'] }}</td>
+                  <td>{{ appt['date'] }}</td>
+                  <td>{{ appt['symptoms'] }}</td>
+                  <td><span class="badge bg-warning text-dark">Pending</span></td>
+                  <td>
+                    <a href="{{ url_for('view_appointment_doctor', appointment_id=appt['appointment_id']) }}" class="btn btn-sm btn-outline-primary">View Details</a>
+                  </td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="5" class="text-center text-muted">No pending appointments.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Completed Tab -->
+        <div class="tab-pane fade" id="completed">
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+              <thead class="table-light">
+                <tr>
+                  <th>Patient Name</th>
+                  <th>Date</th>
+                  <th>Symptoms</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for appt in appointments if appt['status'] == 'Completed' %}
+                <tr>
+                  <td>{{ users[appt['patient_id']]['name'] }}</td>
+                  <td>{{ appt['date'] }}</td>
+                  <td>{{ appt['symptoms'] }}</td>
+                  <td><span class="badge bg-success">Completed</span></td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="4" class="text-center text-muted">No completed appointments.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- All Appointments Tab -->
+        <div class="tab-pane fade" id="all">
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+              <thead class="table-light">
+                <tr>
+                  <th>Patient Name</th>
+                  <th>Date</th>
+                  <th>Symptoms</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for appt in appointments %}
+                <tr>
+                  <td>{{ users[appt['patient_id']]['name'] }}</td>
+                  <td>{{ appt['date'] }}</td>
+                  <td>{{ appt['symptoms'] }}</td>
+                  <td>
+                    {% if appt['status'] == 'Pending' %}
+                      <span class="badge bg-warning text-dark">Pending</span>
+                    {% elif appt['status'] == 'Completed' %}
+                      <span class="badge bg-success">Completed</span>
+                    {% else %}
+                      <span class="badge bg-secondary">{{ appt['status'] }}</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="4" class="text-center text-muted">No appointments available.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="text-center mt-5 text-muted">
+    <small>© 2025 HealthCare App. All rights reserved.</small>
+  </footer>
+</div>
+
+</body>
+</html>
