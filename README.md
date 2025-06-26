@@ -31,7 +31,7 @@ pip install -r requirements.txt
 python app.py
 ```
 
-### 7. Access the Website
+### 5. Access the Website
 - not published yet.
 
 
